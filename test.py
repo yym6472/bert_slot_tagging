@@ -16,7 +16,17 @@ vocabulary.DEFAULT_OOV_TOKEN = "[UNK]"  # set for bert
 def main(args):
     archive = load_archive(args.output_dir)
     predictor = Predictor.from_archive(archive=archive, predictor_name="bert_st")
-    print(predictor.predict({"tokens": ["show", "me", "the", "first", "class", "and", "coach", "flights", "between", "jfk", "and", "orlando"]}))
+
+    while True:
+        try:
+            sentence = input(">>> ")
+            if not sentence.strip():
+                continue
+            output_dict = predictor.predict({"sentence": sentence.strip()})
+            print(f"\t\t\t{' '.join(output_dict['tokens'])}")
+            print(f"\t\t\t{' '.join(output_dict['predict_labels'])}")
+        except KeyboardInterrupt:
+            break
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()

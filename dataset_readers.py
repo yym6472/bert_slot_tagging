@@ -39,11 +39,14 @@ class MultiFileDatasetReader(DatasetReader):
         for token_line, label_line in zip(token_lines, label_lines):
             if not token_line.strip() or not label_line.strip():
                 continue
-            tokens: List[str] = token_line.strip().split(" ")
+            tokens: List[str] = [ch for ch in token_line.strip()]
             labels: List[str] = label_line.strip().split(" ")
             if len(tokens) == 0 or len(labels) == 0:
                 continue
             tokens = [token.strip() for token in tokens if token.strip()]
             labels = [label.strip() for label in labels if label.strip()]
-            assert len(tokens) == len(labels)
+            if len(tokens) != len(labels):
+                print(token_line.strip())
+                print(label_line.strip())
+                assert len(tokens) == len(labels)
             yield self.text_to_instance(tokens, labels)
