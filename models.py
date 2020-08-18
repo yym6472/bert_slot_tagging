@@ -12,7 +12,7 @@ from allennlp.modules.token_embedders.embedding import Embedding
 from allennlp.modules.seq2seq_encoders import Seq2SeqEncoder
 from allennlp.modules.seq2seq_encoders.pytorch_seq2seq_wrapper import PytorchSeq2SeqWrapper
 from allennlp.modules.conditional_random_field import ConditionalRandomField, allowed_transitions
-from allennlp.training.metrics import SpanBasedF1Measure
+from allennlp.training.metrics import SpanBasedF1Measure, CategoricalAccuracy
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
 from pytorch_pretrained_bert import BertTokenizer
@@ -20,7 +20,7 @@ from pytorch_pretrained_bert import BertTokenizer
 logger = logging.getLogger(__name__)
 
 
-@Model.register("bert_st")
+@Model.register("bert_joint")
 class KnowledgeEnhancedSlotTaggingModel(Model):
     
     def __init__(self, 
@@ -55,7 +55,10 @@ class KnowledgeEnhancedSlotTaggingModel(Model):
             hidden2tag_in_dim = bert_embedder.get_output_dim()
         self.hidden2tag = TimeDistributed(torch.nn.Linear(
             in_features=hidden2tag_in_dim,
-            out_features=vocab.get_vocab_size("labels")))
+            out_features=vocab.get_vocab_size("slot_labels")))
+        self.hidden2intent = torch.nn.Linear(
+            in_features=self.bert_embedder.get_output_dim(),
+            out_features=vocab.get_vocab_size("intent_labels"))
         
         if dropout:
             self.dropout = torch.nn.Dropout(dropout)
@@ -66,24 +69,25 @@ class KnowledgeEnhancedSlotTaggingModel(Model):
         if use_crf:
             crf_constraints = allowed_transitions(
                 constraint_type="BIO",
-                labels=vocab.get_index_to_token_vocabulary("labels")
+                labels=vocab.get_index_to_token_vocabulary("slot_labels")
             )
             self.crf = ConditionalRandomField(
-                num_tags=vocab.get_vocab_size("labels"),
+                num_tags=vocab.get_vocab_size("slot_labels"),
                 constraints=crf_constraints,
                 include_start_end_transitions=True
             )
         
         self.f1 = SpanBasedF1Measure(vocab, 
-                                     tag_namespace="labels",
+                                     tag_namespace="slot_labels",
                                      ignore_classes=["news/type","negation",
                                                      "demonstrative_reference",
                                                      "timer/noun","timer/attributes"],
                                      label_encoding="BIO")
+        self.intent_acc = CategoricalAccuracy()
 
     def forward(self,
                 sentence: Dict[str, torch.Tensor],
-                wordnet: Dict[str, torch.Tensor] = None,
+                intent_labels: torch.Tensor = None,
                 slot_labels: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         """
         Return a Dict (str -> torch.Tensor), which contains fields:
@@ -147,7 +151,7 @@ class KnowledgeEnhancedSlotTaggingModel(Model):
         if slot_labels is not None:
             if self.use_crf:
                 log_likelihood = self.crf(tag_logits, slot_labels, mask)  # returns log-likelihood
-                output["loss"] = -1.0 * log_likelihood  # add negative log-likelihood as loss
+                output["slot_loss"] = -1.0 * log_likelihood  # add negative log-likelihood as loss
                 
                 # Represent viterbi tags as "class probabilities" that we can
                 # feed into the metrics
@@ -157,13 +161,28 @@ class KnowledgeEnhancedSlotTaggingModel(Model):
                         class_probabilities[i, j, tag_id] = 1
                 self.f1(class_probabilities, slot_labels, mask.float())
             else:
-                output["loss"] = sequence_cross_entropy_with_logits(tag_logits, slot_labels, mask)
+                output["slot_loss"] = sequence_cross_entropy_with_logits(tag_logits, slot_labels, mask)
                 self.f1(tag_logits, slot_labels, mask.float())
         
+        token_type_ids = torch.zeros_like(sentence["bert"])
+        input_mask = (sentence["bert"] != 0).long()
+        _, pooled = self.bert_embedder.bert_model(input_ids=sentence["bert"],
+                                                  token_type_ids=token_type_ids,
+                                                  attention_mask=input_mask)
+        intent_logits = self.hidden2intent(pooled)
+        if intent_labels is not None:
+            output["intent_loss"] = torch.nn.functional.cross_entropy(intent_logits, intent_labels)
+            self.intent_acc(intent_logits, intent_labels)
+        output["predicted_intent"] = torch.argmax(intent_logits, dim=-1)
+
+        if intent_labels is not None and slot_labels is not None:
+            output["loss"] = output["slot_loss"] + output["intent_loss"]
         return output
     
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        matric = self.f1.get_metric(reset)
-        return {"precision": matric["precision-overall"],
-                "recall": matric["recall-overall"],
-                "f1": matric["f1-measure-overall"]}
+        slot_metric = self.f1.get_metric(reset)
+        intent_metric = self.intent_acc.get_metric(reset)
+        return {"precision": slot_metric["precision-overall"],
+                "recall": slot_metric["recall-overall"],
+                "f1": slot_metric["f1-measure-overall"],
+                "intent-acc": intent_metric}
