@@ -52,9 +52,11 @@ class MultiFileDatasetReader(DatasetReader):
 @DatasetReader.register("json")
 class JsonDatasetReader(DatasetReader):
     def __init__(self,
-                 token_indexers: Dict[str, TokenIndexer] = None) -> None:
+                 token_indexers: Dict[str, TokenIndexer] = None,
+                 filt_func = None) -> None:
         super().__init__(lazy=False)
         self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
+        self.filt_func = filt_func
     
     def text_to_instance(self, tokens: List[str], slots: List[str] = None, intent: str = None) -> Instance:
         sentence_field = TextField([Token(token) for token in tokens], self.token_indexers)
@@ -71,6 +73,8 @@ class JsonDatasetReader(DatasetReader):
     def _read(self, file_path: str) -> Iterator[Instance]:
         all_samples = json.load(open(file_path, "r"))
         for sample in all_samples:
+            if self.filt_func is not None and self.filt_func(sample) == True:
+                continue
             sentence = sample["sentence"]
             tokens = [ch for ch in sentence]
             intent = sample["intent_label"]
