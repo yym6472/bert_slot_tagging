@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Any
 
 import torch
 import logging
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @Model.register("bert_st")
-class KnowledgeEnhancedSlotTaggingModel(Model):
+class BertSlotTagging(Model):
     
     def __init__(self, 
                  vocab: Vocabulary,
@@ -83,7 +83,7 @@ class KnowledgeEnhancedSlotTaggingModel(Model):
 
     def forward(self,
                 sentence: Dict[str, torch.Tensor],
-                wordnet: Dict[str, torch.Tensor] = None,
+                meta: List[Any],
                 slot_labels: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         """
         Return a Dict (str -> torch.Tensor), which contains fields:
@@ -94,15 +94,15 @@ class KnowledgeEnhancedSlotTaggingModel(Model):
             predicted_tags - the output of CRF layer (use viterbi algorithm to obtain best paths),
                              shape: (batch_size, seq_length)
         """
-        # print("bert(token piece ids) shape:", sentence["bert"].shape)
-        # print("bert-offsets shape:", sentence["bert-offsets"].shape)
-        # print("bert-type-ids shape:", sentence["bert-type-ids"].shape)
-        # print("slot-labels shape:", slot_labels.shape)
-        # bert_tokenizer = BertTokenizer.from_pretrained("/home1/yym2019/downloads/word-embeddings/bert-large-uncased/vocab.txt")
-        # print("bert wordpieces:", bert_tokenizer.convert_ids_to_tokens([tensor.item() for tensor in sentence["bert"][1]]))
+        # print("bert(token piece ids) shape:", sentence["bert"].shape, sentence["bert"][3])
+        # print("bert-offsets shape:", sentence["bert-offsets"].shape, sentence["bert-offsets"][3])
+        # print("bert-type-ids shape:", sentence["bert-type-ids"].shape, sentence["bert-type-ids"][3])
+        # print("slot-labels shape:", slot_labels.shape, slot_labels[3])
+        # bert_tokenizer = BertTokenizer.from_pretrained("/home/yym2019/downloads/word-embeddings/bert-base-chinese/vocab.txt")
+        # print("bert wordpieces:", bert_tokenizer.convert_ids_to_tokens([tensor.item() for tensor in sentence["bert"][3]]))
         # exit()
 
-        output = {}
+        output = {"meta": meta}
 
         mask = get_text_field_mask(sentence)
         output["mask"] = mask

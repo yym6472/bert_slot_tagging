@@ -19,7 +19,7 @@ from allennlp.training import Trainer
 from allennlp.training.util import evaluate
 from allennlp.common.util import prepare_global_logging, cleanup_global_logging, prepare_environment
 
-from models import KnowledgeEnhancedSlotTaggingModel
+from models import BertSlotTagging
 from dataset_readers import MultiFileDatasetReader
 
 from allennlp.data import vocabulary

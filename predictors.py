@@ -15,7 +15,10 @@ class SlotFillingPredictor(Predictor):
         outputs = {
             "tokens": [ch for ch in inputs["sentence"]],
             "predict_labels": [self._model.vocab.get_token_from_index(index, namespace="labels")
-                               for index in output_dict["predicted_tags"]]
+                               for index in output_dict["predicted_tags"]],
+            "sample_id": output_dict["meta"]["sample_id"],
+            "start": output_dict["meta"]["start"],
+            "end": output_dict["meta"]["end"],
         }
         if "true_labels" in inputs:
             outputs["true_labels"] = inputs["true_labels"]
@@ -24,5 +27,6 @@ class SlotFillingPredictor(Predictor):
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
         tokens = [ch for ch in json_dict["sentence"]]
-        instance = self._dataset_reader.text_to_instance(tokens=tokens)
+        instance = self._dataset_reader.text_to_instance(tokens,
+            json_dict["sample_id"], json_dict["start"], json_dict["end"])
         return instance
