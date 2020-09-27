@@ -1,0 +1,54 @@
+{
+    "random_seed": 1,
+    "numpy_seed": 1,
+    "pytorch_seed": 1,
+    "train_data_path": "./data/tianchi/train.txt",
+    "validation_data_path": "./data/tianchi/valid.txt",
+    "test_data_path": "./data/tianchi/test.txt",
+    "dataset_reader": {
+        "type": "multi_file",
+        "token_indexers": {
+            "bert": {
+                "type": "bert-pretrained",
+                "pretrained_model": "/home/yym2019/downloads/word-embeddings/reberta-zh-l12-pytorch",
+                "do_lowercase": false
+            }
+        },
+        "random_drop": 0.5
+    },
+    "model": {
+        "type": "bert_st",
+        "bert_embedder": {
+            "pretrained_model": "/home/yym2019/downloads/word-embeddings/reberta-zh-l12-pytorch",
+            "requires_grad": false,
+            "top_layer_only": false
+        },
+        "use_crf": true,
+        "dropout": 0.5,
+        "add_random_noise": true,
+        "noise_norm": 1.5,
+        "noise_loss_prob": 0.5,
+        "add_noise_for": "slot_token"
+    },
+    "iterator": {
+        "type": "bucket",
+        "batch_size": 32,
+        "sorting_keys": [
+            [
+                "sentence",
+                "num_tokens"
+            ]
+        ]
+    },
+    "trainer": {
+        "num_epochs": 1000,
+        "optimizer": {
+            "type": "adam",
+            "lr": 0.001
+        },
+        "patience": 10,
+        "cuda_device": 1,
+        "grad_clipping": 5.0,
+        "validation_metric": "+f1"
+    }
+}

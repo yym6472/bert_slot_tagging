@@ -30,3 +30,12 @@ python3 test.py --output_dir ./output/bert-atis/
 ![配置说明1](https://raw.githubusercontent.com/yym6472/ImagesForPicGo/master/20200325163112.png)
 
 ![配置说明2](https://raw.githubusercontent.com/yym6472/ImagesForPicGo/master/%24VN%6068PRW7LA%7DFZOPLFB4QJ.png)
+
+## 天池TODO
+
+- ~~写一个和比赛一样的评测指标，作为early-stop的指标~~
+- ~~加入规则（根据训练集的词典硬匹配，可以适当提高召回率，鼓励模型多预测），和模型预测的结果融合~~
+- 对对抗攻击的方法调参、尝试其它的数据增强方法（例如：EDA）
+- ~~bert/roberta预训练模型可更新~~
+- 尝试其它的预训练模型（ALBERT、T5等）
+- 尝试加入词典

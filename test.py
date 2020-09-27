@@ -19,7 +19,7 @@ def main(args):
     archive = load_archive(args.output_dir)
     predictor = Predictor.from_archive(archive=archive, predictor_name="bert_st")
 
-    for filename in tqdm.tqdm(os.listdir(args.test_data_dir)):
+    for filename in tqdm.tqdm([item for item in os.listdir(args.test_data_dir) if item[-4:] == ".txt"]):
         one_sample_set = []
         sample_id = filename[:-4]
         for item in parse_ann(os.path.join(args.test_data_dir, filename)):

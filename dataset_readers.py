@@ -70,6 +70,15 @@ def parse_ann(txt_file, ann_file=None):
                 all_tags[idx] = f"I-{tag}"
     
     sentences = input_line.split()
+    new_sentences = []
+    for sentence in sentences:
+        if len(sentence) > 500:
+            for sub_sent in sentence.split("。"):
+                if sub_sent.strip():
+                    new_sentences.append(sub_sent.strip())
+        else:
+            new_sentences.append(sentence)
+    sentences = new_sentences
     # assert all(len(s) > 4 for s in sentences), sentences
     sentence_spans = []
     start_from = 0
@@ -106,7 +115,7 @@ class MultiFileDatasetReader(DatasetReader):
     def text_to_instance(self, tokens: List[str], sample_id: int, start: int,
                          end: int, slots: List[str] = None) -> Instance:
         sentence_field = TextField([Token(token) for token in tokens], self.token_indexers)
-        meta_field = MetadataField({"sample_id": sample_id, "start": start, "end": end})
+        meta_field = MetadataField({"sentence": "".join(tokens), "sample_id": sample_id, "start": start, "end": end})
         fields = {"sentence": sentence_field, "meta": meta_field}
         if slots:
             slot_label_field = SequenceLabelField(labels=slots, sequence_field=sentence_field)
@@ -132,6 +141,9 @@ class MultiFileDatasetReader(DatasetReader):
                 assert sentence.strip() and slots
                 assert len(sentence) == len(slots)
                 tokens: List[str] = [ch for ch in sentence]
+                if len(tokens) > 500:  # TODO
+                    logger.info(f"Dropped sample `{sentence[:50]}...` since the length > 500.")
+                    continue
                 if train and all(slot == "O" for slot in slots) and self.random_drop is not None:
                     if len(slots) < 10:
                         logger.info(f"Dropped sample `{sentence}` since the length < 10.")
