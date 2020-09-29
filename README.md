@@ -36,11 +36,13 @@ python3 test.py --output_dir ./output/bert-atis/
 - ~~写一个和比赛一样的评测指标，作为early-stop的指标~~
 - ~~加入规则（根据训练集的词典硬匹配，可以适当提高召回率，鼓励模型多预测），和模型预测的结果融合~~
 - 对对抗攻击的方法调参、尝试其它的数据增强方法（例如：EDA）
+- 对不同的槽加对抗扰动（例如：用于xxx,xxx,xxx可以加对抗，因为模型需要更关注于“用于”这个触发词）
 - ~~bert/roberta预训练模型可更新~~
-- 尝试其它的预训练模型（ALBERT、T5等）
-- 尝试clue的roberta模型
+- ~~尝试其它的预训练模型（ALBERT、T5等）~~ （感觉估计效果不会比中文预训练模型更好，没必要了）
+- ~~尝试clue的roberta模型~~ （效果和wwm-roberta-chinese差不多）
 - 尝试加入词典
 - ERROR Case study, 查看是什么原因引起的错误（即准确率不高）
-- 使用模型ensemble（修改成每个模型进行一次预测缓存起来）
+- ~~使用模型ensemble（修改成每个模型进行一次预测缓存起来）~~ （已完成，调用fast_test.py和test_ensemble.py即可）
 - 可供参考的tricks：https://github.com/ChileWang0228/Deep-Learning-With-Python/tree/master/chapter8
 - chinese-roberta-wwm预训练模型说明：https://github.com/ymcui/Chinese-BERT-wwm#%E5%BF%AB%E9%80%9F%E5%8A%A0%E8%BD%BD
+- 全部1000条数据用于训练；使用交叉验证获取最优模型；不同交叉验证的模型共同预测最终结果

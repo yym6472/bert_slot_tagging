@@ -18,16 +18,26 @@ vocabulary.DEFAULT_OOV_TOKEN = "[UNK]"  # set for bert
 
 def main(args):
     for output_dir in args.output_dir:
-        test_one_model(output_dir, args.test_data_dir, args.batch_size)
+        test_one_model(output_dir, args.test_data_dir, args.batch_size, args.for_case_study)
 
 
-def test_one_model(output_dir, test_data_dir, batch_size=32):
-    anns_dir = os.path.join(output_dir, "anns")
+def test_one_model(output_dir, test_data_dir, batch_size=32, for_case_study=False):
+    if for_case_study:
+        anns_dir = os.path.join(output_dir, "case_study_anns")
+    else:
+        anns_dir = os.path.join(output_dir, "anns")
     if not os.path.exists(anns_dir):
         os.mkdir(anns_dir)
+
     archive = load_archive(output_dir, cuda_device=1)
     predictor = Predictor.from_archive(archive=archive, predictor_name="bert_st")
-    for filename in tqdm.tqdm([item for item in os.listdir(test_data_dir) if item[-4:] == ".txt"]):
+
+    if for_case_study:
+        filenames = [line.strip() + ".txt" for line in open("./data/tianchi/test.txt", "r")]
+    else:
+        filenames = [item for item in os.listdir(test_data_dir) if item[-4:] == ".txt"]
+
+    for filename in tqdm.tqdm(filenames):
         sample_id = filename[:-4]
         input_jsons = []
         output_jsons = []
@@ -51,5 +61,6 @@ if __name__ == "__main__":
                             help="the directory that stores training output")
     arg_parser.add_argument("--test_data_dir", type=str, default="./data/tianchi/chusai_xuanshou")
     arg_parser.add_argument("--batch_size", type=int, default=16)
+    arg_parser.add_argument("--for_case_study", action="store_true")
     args = arg_parser.parse_args()
     main(args)
