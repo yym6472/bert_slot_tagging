@@ -21,6 +21,7 @@ from allennlp.common.util import prepare_global_logging, cleanup_global_logging,
 
 from models import BertSlotTagging
 from dataset_readers import MultiFileDatasetReader
+from fast_test import test_one_model
 
 from allennlp.data import vocabulary
 vocabulary.DEFAULT_OOV_TOKEN = "[UNK]"  # set for bert, for evaluation
@@ -73,6 +74,8 @@ def main(args):
         logging.info(f"Metrics on the test set: {test_metrics}")
         with open(os.path.join(args.output_dir, "test_metrics.txt"), "w", encoding="utf-8") as f_out:
             f_out.write(f"Metrics on the test set: {test_metrics}")
+
+    test_one_model(args.output_dir, "./data/tianchi/chusai_xuanshou", batch_size=16)
 
     cleanup_global_logging(stdout_handler)
 

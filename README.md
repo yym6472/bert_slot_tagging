@@ -41,6 +41,6 @@ python3 test.py --output_dir ./output/bert-atis/
 - 尝试clue的roberta模型
 - 尝试加入词典
 - ERROR Case study, 查看是什么原因引起的错误（即准确率不高）
-- 使用模型ensemble
+- 使用模型ensemble（修改成每个模型进行一次预测缓存起来）
 - 可供参考的tricks：https://github.com/ChileWang0228/Deep-Learning-With-Python/tree/master/chapter8
 - chinese-roberta-wwm预训练模型说明：https://github.com/ymcui/Chinese-BERT-wwm#%E5%BF%AB%E9%80%9F%E5%8A%A0%E8%BD%BD
